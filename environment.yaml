@@ -1,0 +1,6 @@
+name: midiocrity
+channels:
+  - defaults
+dependencies:
+  - pytorch
+  - scikit-learn
