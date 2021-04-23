@@ -1,0 +1,10 @@
+keras==2.2.4
+pretty-midi==0.2.8
+progressbar2==3.38.0
+tables==3.4.4
+pypianoroll==0.5.0
+gpustat==0.5.0
+pydot==1.2.4
+graphviz==0.9
+tensorflow-gpu==1.12.3
+jupyter==1.0.0
