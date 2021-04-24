@@ -1,9 +1,11 @@
 #FROM python:3.6
 FROM nvidia/cuda:11.3.0-base-ubuntu18.04
-
 #CMD nvidia-smi
 
 # Installs necessary dependencies.
+RUN apt-get update 
+RUN apt-get install software-properties-common -y
+RUN add-apt-repository ppa:deadsnakes/ppa
 RUN apt-get update 
 
 RUN apt-get install -y --no-install-recommends \
@@ -13,13 +15,14 @@ RUN apt-get install -y --no-install-recommends \
          python-pydot \
          python-pydot-ng \
          graphviz \
-         python-dev
+         python3.8-dev \
+         python3.8-distutils
 
 RUN rm -rf /var/lib/apt/lists/*
 
 # Installs pip.
 RUN curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python get-pip.py && \
+    python3 get-pip.py && \
     pip install setuptools && \
     rm get-pip.py
 
@@ -28,6 +31,7 @@ ENV VIRTUAL_ENV=/venv
 RUN virtualenv venv -p python3.8
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN python -m pip install --upgrade pip
 
 # INSTALL DEPENDENCIES
 WORKDIR /app

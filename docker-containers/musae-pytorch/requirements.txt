@@ -1,6 +1,6 @@
 pretty-midi==0.2.8
 progressbar2==3.38.0
-tables==3.4.4
+tables==3.6.1
 pypianoroll==0.5.0
 gpustat==0.5.0
 pydot==1.2.4
