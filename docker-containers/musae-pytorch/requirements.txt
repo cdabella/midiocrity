@@ -1,0 +1,13 @@
+pretty-midi==0.2.8
+progressbar2==3.38.0
+tables==3.6.1
+pypianoroll==0.5.0
+gpustat==0.5.0
+pydot==1.2.4
+graphviz==0.9
+jupyter==1.0.0
+
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==1.8.1+cu111
+torchvision==0.9.1+cu111
+torchaudio===0.8.1
