@@ -136,4 +136,11 @@ dmypy.json
 .pyre/
 
 # Data folder
-data/clean_midi/
+/data/clean_midi/
+/data/pianorolls/
+/data/batches/
+
+# Outputs
+out/
+
+
