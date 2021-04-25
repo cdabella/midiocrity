@@ -2,12 +2,12 @@ import pickle
 import os
 
 
-def unload_data():
+def unload_data(filename='../data/batches/tensors-0.pkl'):
     dir_path = os.path.dirname(os.path.realpath(__file__))
     print(str(dir_path))
-    with open('tensors-0.pkl', 'rb') as f:
+    with open(filename, 'rb') as f:
         data = pickle.load(f)
-        print("hoot")
+    return data
 
 
 if __name__ == "__main__":
