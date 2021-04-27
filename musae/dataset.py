@@ -193,7 +193,39 @@ class MidiDataset():
 			np.save(os.path.join(batch_path, "Y", str(i) + ".npy"), Y)
 			np.save(os.path.join(batch_path, "labels", str(i) + ".npy"), labels)
 
-	def create_tensor_batches(self, batch_size=128):
+	def process_batch(self, args):
+		idx, source = args
+		dest = []
+		labels = []
+
+		batch_path = os.path.join(self.data_path, "batches/")
+		pianorolls_path = os.path.join(self.data_path, "pianorolls/")
+		metadata_path = os.path.join(self.data_path, "metadata/")
+
+		# for each pianoroll, store it and the corresponding labels
+		for sample in source:
+			multitrack = pproll.load(os.path.join(pianorolls_path, sample))
+			proll = multitrack.get_stacked_pianoroll()
+			dest.append(proll)
+
+			# retrieve corresponding s factors
+			sample_id = sample.split(".")[0]
+			# song_id = meta_link[sample_id]
+			# label = np.load(os.path.join(self.dataset_path, "labels", str(song_id) + ".npy"))
+			# labels.append(label)
+
+		dest = np.array(dest)
+		labels = np.array(labels)
+		# preprocess batch, get X and Y
+		X, Y = self.preprocess(dest)
+		# store everything
+		with open(os.path.join(batch_path, f'tensors-{idx}.pkl'), 'wb') as f:
+			pickle.dump((torch.from_numpy(X), torch.from_numpy(Y)), f, pickle.HIGHEST_PROTOCOL)
+		# np.save(os.path.join(batch_path, "X", str(i) + ".npy"), X)
+		# np.save(os.path.join(batch_path, "Y", str(i) + ".npy"), Y)
+		# np.save(os.path.join(batch_path, "labels", str(i) + ".npy"), labels)
+
+	def create_tensor_batches(self, batch_size=128, n_processes=10):
 		print("Building batches from data...")
 
 		batch_path = os.path.join(self.data_path, "batches/")
@@ -222,37 +254,41 @@ class MidiDataset():
 		dataset = dataset.reshape((-1, batch_size))
 		n_of_batches = dataset.shape[0]
 
-		# store each batch in a file toghether
-		# bar = progressbar.ProgressBar(max_value=n_of_batches)
+		batches = [(idx, dataset[idx, :]) for idx in range(n_of_batches)]
+		with Progress() as progress:
+			task = progress.add_task("Batching data...", total=n_of_batches, visible=True)
+			chunksize = 1
+			with multiprocessing.Pool(processes=n_processes) as pool:
+				for result in pool.imap(self.process_batch, batches, chunksize=chunksize):
+					progress.advance(task, advance=chunksize)
+		
+		# for i in track(range(n_of_batches), description="Batching data..."):
+		# 	# bar.update(i)
+		# 	source = dataset[i, :]
+		# 	dest = []
+		# 	labels = []
+		# 	# for each pianoroll, store it and the corresponding labels
+		# 	for sample in source:
+		# 		multitrack = pproll.load(os.path.join(pianorolls_path, sample))
+		# 		proll = multitrack.get_stacked_pianoroll()
+		# 		dest.append(proll)
 
-		# meta_link = json.load(open(os.path.join(self.dataset_path, "meta_link.json")))
-		for i in track(range(n_of_batches), description="Batching data..."):
-			# bar.update(i)
-			source = dataset[i, :]
-			dest = []
-			labels = []
-			# for each pianoroll, store it and the corresponding labels
-			for sample in source:
-				multitrack = pproll.load(os.path.join(pianorolls_path, sample))
-				proll = multitrack.get_stacked_pianoroll()
-				dest.append(proll)
+		# 		# retrieve corresponding s factors
+		# 		sample_id = sample.split(".")[0]
+		# 		# song_id = meta_link[sample_id]
+		# 		# label = np.load(os.path.join(self.dataset_path, "labels", str(song_id) + ".npy"))
+		# 		# labels.append(label)
 
-				# retrieve corresponding s factors
-				sample_id = sample.split(".")[0]
-				# song_id = meta_link[sample_id]
-				# label = np.load(os.path.join(self.dataset_path, "labels", str(song_id) + ".npy"))
-				# labels.append(label)
-
-			dest = np.array(dest)
-			labels = np.array(labels)
-			# preprocess batch, get X and Y
-			X, Y = self.preprocess(dest)
-			# store everything
-			with open(os.path.join(batch_path, f'tensors-{i}.pkl'), 'wb') as f:
-				pickle.dump((torch.from_numpy(X), torch.from_numpy(Y)), f, pickle.HIGHEST_PROTOCOL)
-			# np.save(os.path.join(batch_path, "X", str(i) + ".npy"), X)
-			# np.save(os.path.join(batch_path, "Y", str(i) + ".npy"), Y)
-			# np.save(os.path.join(batch_path, "labels", str(i) + ".npy"), labels)
+		# 	dest = np.array(dest)
+		# 	labels = np.array(labels)
+		# 	# preprocess batch, get X and Y
+		# 	X, Y = self.preprocess(dest)
+		# 	# store everything
+		# 	with open(os.path.join(batch_path, f'tensors-{i}.pkl'), 'wb') as f:
+		# 		pickle.dump((torch.from_numpy(X), torch.from_numpy(Y)), f, pickle.HIGHEST_PROTOCOL)
+		# 	# np.save(os.path.join(batch_path, "X", str(i) + ".npy"), X)
+		# 	# np.save(os.path.join(batch_path, "Y", str(i) + ".npy"), Y)
+		# 	# np.save(os.path.join(batch_path, "labels", str(i) + ".npy"), labels)
 
 	def preprocess(self, X):
 		# if silent timestep (all 0), then set silent note to 1, else set
