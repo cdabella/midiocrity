@@ -1,16 +1,17 @@
 import torch
 import torch.nn as nn
 
-class Encoder(nn.Module):
+class Encoder():
     '''
     Encoder consists of 3 stacked Bidirectional LSTM Layers followed by 4 Fully-Connected Layers.
     Input to LSTM is of size (batch size, seq_len, input_size) e.g. (128, 256, 1) for drums
     Output from LSTM is of size (seq_len, batch, num_directions*hidden_size)
     '''
-    def __init__(self, input_size, seq_len=256, hidden_size=32, num_layers=3):
-        super(Encoder, self).__init__()
+    def __init__(self, input_size, z_dim, seq_len=256, hidden_size=32, num_layers=3):
         self.lstm = torch.nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
                                   bidirectional=True, batch_first=True)
+
+        self.z_dim = z_dim
 
         self.fc_z_mean = nn.Sequential(
             nn.Linear(seq_len * 2 * hidden_size, 128),
@@ -19,7 +20,7 @@ class Encoder(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Linear(32, self.z_dim),
             nn.ReLU()
         )
 
@@ -30,14 +31,14 @@ class Encoder(nn.Module):
             nn.ReLU(),
             nn.Linear(64, 32),
             nn.ReLU(),
-            nn.Linear(32, 1),
+            nn.Linear(32, self.z_dim),
             nn.ReLU()
         )
 
     '''
     Forward pass of encoder with pytorch based on musae encoders.py
     Input: tensor of size (batch, seq_len, sample)
-    Output: tensor of size (batch, 1) -- track is currently 1 for just drums
+    Output: tensor of size (batch, z_dim)
     '''
     def forward(self, input):
         input = input.float()

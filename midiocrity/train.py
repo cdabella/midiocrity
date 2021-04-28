@@ -20,7 +20,7 @@ class midiocrity():
         X = X[:, :, :, 0]
         X = torch.squeeze(X)
         # single-track input X should now be of size (batch, time, pitch)
-        self.encoder = encoder.Encoder(X.shape[2])
+        self.encoder = encoder.Encoder(X.shape[2], 4)
         output_z_mean, output_z_logvar = self.encoder.forward(X)
 
 
