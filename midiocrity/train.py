@@ -16,13 +16,14 @@ class midiocrity():
 
     def train(self):
         batch = unload_data()
-        X = batch[0, :, :, :, 0]
+        X = batch[0]
+        X = X[:, :, :, 0]
         X = torch.squeeze(X)
         # single-track input X should now be of size (batch, time, pitch)
-        self.encoder = encoder.encoder(X.shape[2])
-        output = self.encoder.forward(X)
+        self.encoder = encoder.Encoder(X.shape[2])
+        output_z_mean, output_z_logvar = self.encoder.forward(X)
 
-        
+
 if __name__ == "__main__":
     midiocrity = midiocrity()
     midiocrity.train()
