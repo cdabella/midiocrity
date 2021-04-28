@@ -1,7 +1,10 @@
 import torch
 from torch import nn
 from decoder import Decoder
-from encoder import encoder
+from encoder import Encoder
+from torch import lerp
+from interpolator import slerp
+
 
 class MidiocrityVAE(nn.Module):
 
@@ -40,7 +43,7 @@ class MidiocrityVAE(nn.Module):
             else:
                 self.decoder_params = decoder_params
 
-        self.encoder = encoder(**self.encoder_params)
+        self.encoder = Encoder(**self.encoder_params)
         self.decoder = Decoder(**self.decoder_params)
 
         self.use_cuda = use_cuda if torch.cuda.is_available() else False
@@ -83,3 +86,33 @@ class MidiocrityVAE(nn.Module):
         out = self.decode(z)
         return out
 
+    def interpolate(self, x_s, x_t, length = 10, method = 'lerp'):    
+        interpolator = 0
+        if method == 'lerp':
+            interpolator = torch.lerp
+        elif method == 'slerp':
+            zi = slerp
+
+        # Encode enpoints
+        print('encoding ...')
+        # [0] z
+        z_s = self.encode(x_s)[0]
+        z_t = self.encode(x_t)[0]
+        print('z_s.shape: ', z_s.shape)
+
+        # Interpolation by length L
+        print('generating interpolation ...')
+        z = []
+        for i in range(length):
+            weight = i / length
+            zi = interpolator(z_s, z_t, weight)
+            z.append(zi)
+
+        print('decoding interpolation ...')
+        # Decode z
+        d = []
+        for zi in z:
+            d.append(self.decode(zi))
+        
+        # d = [D(z0),...,D(zL)]
+        return d
