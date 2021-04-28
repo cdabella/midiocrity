@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
 
-class Encoder():
+class Encoder(nn.Module):
     '''
     Encoder consists of 3 stacked Bidirectional LSTM Layers followed by 4 Fully-Connected Layers.
     Input to LSTM is of size (batch size, seq_len, input_size) e.g. (128, 256, 1) for drums
     Output from LSTM is of size (seq_len, batch, num_directions*hidden_size)
     '''
     def __init__(self, input_size, z_dim, seq_len=256, hidden_size=32, num_layers=3):
+        super(Encoder, self).__init__()
         self.lstm = torch.nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
                                   bidirectional=True, batch_first=True)
 
