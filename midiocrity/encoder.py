@@ -21,11 +21,6 @@ class Encoder():
             nn.Linear(32, 1),
             nn.ReLU()
         )
-        # self.fc_z_mean_1 = torch.nn.Linear(seq_len * 2 * hidden_size, 128)
-        # self.fc_z_mean_2 = torch.nn.Linear(128, 64)
-        # self.fc_z_mean_3 = torch.nn.Linear(64, 32)
-        # self.fc_z_mean_4 = torch.nn.Linear(32, 1)
-        # self.z_mean_relu = torch.nn.ReLU()
 
         self.fc_logvar = nn.Sequential(
             nn.Linear(seq_len * 2 * hidden_size, 128),
@@ -37,12 +32,6 @@ class Encoder():
             nn.Linear(32, 1),
             nn.ReLU()
         )
-
-        # self.fc_z_logvar_1 = torch.nn.Linear(seq_len * 2 * hidden_size, 128)
-        # self.fc_z_logvar_2 = torch.nn.Linear(128, 64)
-        # self.fc_z_logvar_3 = torch.nn.Linear(64, 32)
-        # self.fc_z_logvar_4 = torch.nn.Linear(32, 1)
-        # self.fc_z_logvar_relu = torch.nn.ReLU()
 
     '''
     Forward pass of encoder with pytorch based on musae encoders.py
