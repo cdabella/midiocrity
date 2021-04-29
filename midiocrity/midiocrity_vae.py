@@ -23,7 +23,8 @@ class MidiocrityVAE(nn.Module):
         else:
             if not encoder_params:
                 self.encoder_params = {
-                    "input_size": 4,
+                    "input_size": 130,
+                    "z_dim": 32,
                     "seq_len": 256,
                     "hidden_size": 512,
                     "num_layers": 3
@@ -86,7 +87,7 @@ class MidiocrityVAE(nn.Module):
         out = self.decode(z)
         return out
 
-    def interpolate(self, x_s, x_t, length = 10, method = 'lerp'):    
+    def interpolate(self, x_s, x_t, length = 30, method = 'lerp'):    
         interpolator = 0
         if method == 'lerp':
             interpolator = torch.lerp
@@ -95,10 +96,13 @@ class MidiocrityVAE(nn.Module):
 
         # Encode enpoints
         print('encoding ...')
-        # [0] z
-        z_s = self.encode(x_s)[0]
-        z_t = self.encode(x_t)[0]
-        print('z_s.shape: ', z_s.shape)
+        mu_s, lv_s = self.encode(x_s)
+        mu_t, lv_t = self.encode(x_t)
+        print('reparameterizing ...')
+        z_s = self.reparameterize(mu_s, lv_s)
+        z_t = self.reparameterize(mu_t, lv_t)
+
+        print('encoded shape: ', z_s.shape)
 
         # Interpolation by length L
         print('generating interpolation ...')
@@ -109,10 +113,18 @@ class MidiocrityVAE(nn.Module):
             z.append(zi)
 
         print('decoding interpolation ...')
+        import time
+        start = time.time()
         # Decode z
         d = []
+        i=0
         for zi in z:
-            d.append(self.decode(zi))
+            di = self.decode(zi)
+            print(di.shape)
+            d.append(di)
+        # d = list(map(lambda zi: self.decode(zi), z))
+        # print(d[0].shape)
+        print(time.time() - start)
         
         # d = [D(z0),...,D(zL)]
         return d

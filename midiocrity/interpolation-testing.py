@@ -30,9 +30,10 @@ if __name__ == "__main__":
     # midiocrity = midiocrity()
     midiocrity = MidiocrityVAE()
     # midiocrity.train()
-    # INPUT -> (batch size, seq_len, input_size)
+    # INPUT -> (batch size, seq_len, input_size)  --  batch, phrase_size, notes, track
     # ENCODER Z OUTPUT -> (seq_len, batch, num_directions*hidden_size)
-    # DECODER INPUT -> batch x phrase_size x notes x track 
-    x_s = torch.rand(16, 256, 4)
-    x_t = torch.rand(16, 256, 4)
+    # DECODER INPUT  -> (seq_len, batch, num_directions*hidden_size)
+    # DECODER OUTPUT -> batch x phrase_size x notes x track 
+    x_s = torch.rand(16, 256, 130)
+    x_t = torch.rand(16, 256, 130)
     midiocrity.interpolate(x_s, x_t)

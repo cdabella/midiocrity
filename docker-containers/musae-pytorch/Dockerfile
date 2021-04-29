@@ -71,7 +71,7 @@ ADD ./home /home
 
 # Launch Jupyter
 EXPOSE 8888
-ENTRYPOINT  ["/pytorch-gpu/bin/jupyter", "notebook", "--port=8888", "--no-browser", "--ip=*", "--allow-root", "--NotebookApp.token=''", "--notebook-dir=/home/notebooks"]
+ENTRYPOINT  ["/pytorch-gpu/bin/jupyter", "notebook", "--port=8888", "--no-browser", "--ip=*", "--allow-root", "--NotebookApp.token=''", "--notebook-dir=/home"]
 
 ## docker build -t musae-orig-gpu .
 ## docker run -dp 8888:8888 -w /app -v "$(pwd)/app:/app" -v "$(pwd)/home:/home" musae-gpu-orig
