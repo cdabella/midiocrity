@@ -59,7 +59,8 @@ class MidiTorchDataset(Dataset):
 
 class MidiDataloader:
 	def __init__(self, tensor_folder, batch_size, shuffle=True, num_workers=4,
-				 train_valid_test_split=(0.7, 0.2, 0.1), seed=None, phase='train'):
+				 train_valid_test_split=(0.7, 0.2, 0.1), seed=None, phase='train',
+				 batch_limit=None):
 		self.tensor_folder = tensor_folder
 		self.tensor_files = [f for f in os.listdir(tensor_folder)]
 		self.num_files = len(self.tensor_files)
@@ -68,6 +69,7 @@ class MidiDataloader:
 		self.num_workers = num_workers
 		self.tvt_split = train_valid_test_split
 		self.seed = seed
+		self.batch_limit = batch_limit
 
 		if self.valid_phase(phase):
 			self.phase = phase
@@ -89,6 +91,8 @@ class MidiDataloader:
 		self.test_files = self.tensor_files[int(self.num_files * (self.tvt_split[0] + self.tvt_split[1])):]
 
 	def __iter__(self):
+		if self.batch_limit is not None:
+			count = 0
 		files = getattr(self, f"{self.phase}_files")
 		for file in files:
 			filepath = os.path.join(self.tensor_folder, file)
@@ -101,10 +105,17 @@ class MidiDataloader:
 				shuffle=self.shuffle,
 				num_workers=self.num_workers
 			)
+
 			for batch in dataloader:
 				yield batch
+				if self.batch_limit:
+					count += 1
+					if count >= self.batch_limit:
+						break
 
 			del X, y, dataset, dataloader
+			if self.batch_limit is not None and count >= self.batch_limit:
+				break
 
 	def set_phase(self, phase):
 		if phase not in ['train', 'valid', 'test']:

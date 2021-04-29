@@ -23,9 +23,9 @@ class MidiocrityVAE(nn.Module):
         else:
             if not encoder_params:
                 self.encoder_params = {
-                    "input_size": 130,
+                    "n_cropped_notes": 130,
                     "z_dim": 32,
-                    "seq_len": 256,
+                    "phrase_size": 256,
                     "hidden_size": 512,
                     "num_layers": 3
                 }

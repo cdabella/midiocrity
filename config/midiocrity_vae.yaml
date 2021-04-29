@@ -1,12 +1,21 @@
 model_params:
-  in_channels: 3
-  latent_dim: 128
+  n_cropped_notes: 130
+  z_dim: 32
+  phrase_size: 256
+  encoder_params:
+    hidden_size: 512
+    num_layers: 3
+  decoder_params:
+    hidden_size: 512
+    num_layers: 3
+    n_tracks: 1
 
 data_params:
   tensor_folder: "../data/batches"
   batch_size: 16
   shuffle: True
   num_workers: 4
+  batch_limit: 2
 
 train_params:
   seed: 1

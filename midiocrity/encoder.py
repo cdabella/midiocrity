@@ -7,15 +7,15 @@ class Encoder(nn.Module):
     Input to LSTM is of size (batch size, seq_len, input_size) e.g. (128, 256, 1) for drums
     Output from LSTM is of size (seq_len, batch, num_directions*hidden_size)
     '''
-    def __init__(self, input_size, z_dim, seq_len=256, hidden_size=32, num_layers=3):
+    def __init__(self, n_cropped_notes, z_dim, phrase_size=256, hidden_size=32, num_layers=3):
         super(Encoder, self).__init__()
-        self.lstm = torch.nn.LSTM(input_size=input_size, hidden_size=hidden_size, num_layers=num_layers,
+        self.lstm = torch.nn.LSTM(input_size=n_cropped_notes, hidden_size=hidden_size, num_layers=num_layers,
                                   bidirectional=True, batch_first=True)
 
         self.z_dim = z_dim
 
         self.fc_z_mean = nn.Sequential(
-            nn.Linear(seq_len * 2 * hidden_size, 128),
+            nn.Linear(phrase_size * 2 * hidden_size, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
@@ -26,7 +26,7 @@ class Encoder(nn.Module):
         )
 
         self.fc_logvar = nn.Sequential(
-            nn.Linear(seq_len * 2 * hidden_size, 128),
+            nn.Linear(phrase_size * 2 * hidden_size, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
