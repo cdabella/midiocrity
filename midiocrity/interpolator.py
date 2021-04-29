@@ -1,3 +1,4 @@
+import torch
 from torch import lerp
 
 def interpolate(encoder, decoder, x_s, x_t, length = 10, method = 'lerp'):

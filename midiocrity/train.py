@@ -69,7 +69,9 @@ def main():
             "z_dim": config['model_params']['z_dim'],
             "phrase_size": config['model_params']['phrase_size'],
             "hidden_size": config['model_params']['encoder_params']['hidden_size'],
-            "num_layers": config['model_params']['encoder_params']['num_layers']
+            "num_layers": config['model_params']['encoder_params']['num_layers'],
+            "batch_size": config['data_params']['batch_size'],
+            "n_tracks": config['model_params']['decoder_params']['n_tracks'],
         },
         decoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
