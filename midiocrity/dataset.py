@@ -1,5 +1,5 @@
 # import config
-import config.config_preprocessing as config
+import config_preprocessing as config
 import numpy as np
 import time
 import os
@@ -86,7 +86,7 @@ class MidiDataloader:
 		):int(
 			self.num_files * (self.tvt_split[0] + self.tvt_split[1])
 		)]
-		self.test_files = self.tensor_files[self.num_files * (self.tvt_split[0] + self.tvt_split[1]):]
+		self.test_files = self.tensor_files[int(self.num_files * (self.tvt_split[0] + self.tvt_split[1])):]
 
 	def __iter__(self):
 		files = getattr(self, f"{self.phase}_files")
