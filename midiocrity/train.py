@@ -16,6 +16,7 @@ import numpy as np
 from dataset import MidiDataloader
 
 from rich import print as rprint
+from rich.table import Table
 
 class midiocrity():
     def __init__(self, **kwargs):
@@ -62,7 +63,7 @@ def main():
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
-    model = MidiocrityVAE(
+    mvae = MidiocrityVAE(
         encoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
             "z_dim": config['model_params']['z_dim'],
@@ -80,6 +81,28 @@ def main():
             "n_tracks": config['model_params']['decoder_params']['n_tracks'],
         }
     )
+
+    rprint(mvae)
+
+    table = Table(title="MVAE Trainable Parameters")
+    table.add_column("Component")
+    table.add_column("Module")
+    table.add_column("Parameters", justify="right")
+    params = {
+        "encoder": 0,
+        "decoder": 0
+    }
+    for name, param in mvae.named_parameters():
+        if not param.requires_grad:
+            continue
+        component = name.split('.')[0]
+        num_params = param.numel()
+        table.add_row(component, name, str(num_params))
+
+        params[component] += num_params
+
+    rprint(table)
+    rprint(params)
 
     loader = MidiDataloader(
         config['data_params']['tensor_folder'],

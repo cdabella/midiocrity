@@ -15,7 +15,7 @@ data_params:
   batch_size: 16
   shuffle: True
   num_workers: 4
-  batch_limit: 2
+  batch_limit: 1
 
 train_params:
   seed: 1
