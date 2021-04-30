@@ -41,10 +41,7 @@ class midiocrity():
     def train(self):
         batch = unload_data()
         X = batch[0]
-        X = X[:, :, :, 0]
-        X = torch.squeeze(X)
-        # single-track input X should now be of size (batch, time, pitch)
-        self.encoder = encoder.Encoder(X.shape[2], 4)
+        self.encoder = encoder.Encoder(4, n_tracks=1)
         output_z_mean, output_z_logvar = self.encoder.forward(X)
 
 
@@ -80,7 +77,9 @@ def main():
             "z_dim": config['model_params']['z_dim'],
             "phrase_size": config['model_params']['phrase_size'],
             "hidden_size": config['model_params']['encoder_params']['hidden_size'],
-            "num_layers": config['model_params']['encoder_params']['num_layers']
+            "num_layers": config['model_params']['encoder_params']['num_layers'],
+            "batch_size": config['data_params']['batch_size'],
+            "n_tracks": config['model_params']['decoder_params']['n_tracks'],
         },
         decoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
