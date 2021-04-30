@@ -218,7 +218,7 @@ def main():
 
                 if step % config['train_params']['anneal_step'] == 0:
                     scheduler.step()
-                    progress.console.print(f"Learning rate: {scheduler.get_lr():.6f}")
+                    progress.console.print(f"Learning rate: {scheduler.get_last_lr():.6f}")
 
                 # Increase KL weight (beta)
                 if step % config['train_params']['beta_increase_step'] == 0:
