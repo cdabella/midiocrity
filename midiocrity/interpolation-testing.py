@@ -42,12 +42,15 @@ def main():
         torch.backends.cudnn.benchmark = False
 
     model = MidiocrityVAE(
+        use_cuda = False,
         encoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
             "z_dim": config['model_params']['z_dim'],
             "phrase_size": config['model_params']['phrase_size'],
             "hidden_size": config['model_params']['encoder_params']['hidden_size'],
-            "num_layers": config['model_params']['encoder_params']['num_layers']
+            "num_layers": config['model_params']['encoder_params']['num_layers'],
+            "batch_size": config['data_params']['batch_size'],
+            "n_tracks": config['model_params']['decoder_params']['n_tracks'],
         },
         decoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
@@ -57,7 +60,8 @@ def main():
             "num_layers": config['model_params']['decoder_params']['num_layers'],
             "batch_size": config['data_params']['batch_size'],
             "n_tracks": config['model_params']['decoder_params']['n_tracks'],
-        }
+        },
+        # kl_weight=config['model_params']['kl_weight']
     )
 
     # loader = MidiDataloader(
@@ -79,9 +83,11 @@ def main():
     # ENCODER Z OUTPUT -> (seq_len, batch, num_directions*hidden_size)
     # DECODER INPUT  -> (seq_len, batch, num_directions*hidden_size)
     # DECODER OUTPUT -> batch x phrase_size x notes x track 
-    x_s = torch.rand(16, 256, 130)
-    x_t = torch.rand(16, 256, 130)
-    model.interpolate(x_s, x_t, length=14)
+    
+    with torch.no_grad():
+        x_s = torch.rand(16, 256, 130, 1)
+        x_t = torch.rand(16, 256, 130, 1)
+        model.interpolate(x_s, x_t, length=50)
 
 
 
