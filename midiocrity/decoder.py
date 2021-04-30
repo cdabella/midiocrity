@@ -55,7 +55,7 @@ class Decoder(nn.Module):
         
         h_0 = self.latent_to_h_0(x)
         h_0 = h_0.view(self.num_directions, self.batch_size, self.hidden_size)
-        h_0 = h_0.expand(self.num_layers * self.num_directions, self.batch_size, self.hidden_size)
+        h_0 = h_0.expand(self.num_layers * self.num_directions, self.batch_size, self.hidden_size).contiguous()
         # h_0 = h_0.view(self.batch_size, self.num_directions, self.hidden_size)
         # h_0 = h_0.expand(self.batch_size, self.num_layers * self.num_directions, self.hidden_size)
 
