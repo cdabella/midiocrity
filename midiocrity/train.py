@@ -19,6 +19,7 @@ import numpy as np
 
 from dataset import MidiDataloader
 
+import math
 import time
 from datetime import timedelta
 
@@ -71,6 +72,8 @@ def main():
         torch.backends.cudnn.deterministic = True
         torch.backends.cudnn.benchmark = False
 
+    device = torch.device(config["device"])
+
     mvae = MidiocrityVAE(
         encoder_params={
             "n_cropped_notes": config['model_params']['n_cropped_notes'],
@@ -90,6 +93,7 @@ def main():
         },
         # kl_weight=config['model_params']['kl_weight']
     )
+
 
     rprint(mvae)
 
@@ -112,6 +116,7 @@ def main():
 
     rprint(table)
     rprint(params)
+    rprint(f"Device: {mvae.current_device}")
 
     optimizer = optim.Adam(
         mvae.parameters(),
@@ -122,6 +127,9 @@ def main():
         optimizer,
         gamma=config['train_params']['scheduler_gamma']
     )
+
+    param_norm = lambda m: math.sqrt(sum([p.norm().item() ** 2 for p in m.parameters()]))
+    grad_norm = lambda m: math.sqrt(sum([p.grad.norm().item() ** 2 for p in m.parameters() if p.grad is not None]))
 
     beta = config['train_params']['beta']
 
@@ -146,20 +154,39 @@ def main():
                 X = batch[0]
                 X = X[:, :, :, 0]
                 X[X == 255] = 0
-                X.type(torch.int32)
-                # X = torch.squeeze(X)
+                X = X.to(device=device, dtype=torch.float)
+                # breakpoint()
+                # X = X.to(config["device"])
 
+                # X = torch.squeeze(X)
+                mvae.zero_grad()
                 mu, logvar, z, recon = mvae(X)
+                # breakpoint()
+                # progress.console.print(
+                #     f"{'#'* 20} mu {'#'* 20}\n"
+                #     f"{mu}\n"
+                #     f"{'#'* 20} logvar {'#'* 20}\n"
+                #     f"{logvar}\n"
+                # )
                 recon = torch.squeeze(recon)
                 kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
+                # breakpoint()
                 loss.backward()
                 if config['train_params']['clip_norm'] is not None:
                     nn.utils.clip_grad_norm_(
                         mvae.parameters(),
                         config['train_params']['clip_norm']
                     )
-                optimizer.step()
 
+                optimizer.step()
+                # progress.console.print(
+                #     f"Param Norm: {param_norm(mvae)}\n"
+                #     f"Grad Norm: {grad_norm(mvae)}"
+                # )
+                # for name, param in mvae.named_parameters():
+                #     # if param.requires_grad:
+                #     print(name, torch.max(param.data))
+                # breakpoint()
                 metrics = metrics + np.array([kl_loss, recon_loss, loss])
 
                 if step % config['output_params']['print_step'] == 0:
@@ -173,7 +200,7 @@ def main():
                         f"tcycle: {timedelta(seconds=tcycle)} "
                         f"beta: {beta:.3f} "
                         f"KLDiv: {metrics[0]:.2f} "
-                        f"ReconMSE: {metrics[1]:.2f} "
+                        f"ReconBCEL: {metrics[1]:.4f} "
                         f"Loss: {metrics[2]:.2f}"
                     )
 
