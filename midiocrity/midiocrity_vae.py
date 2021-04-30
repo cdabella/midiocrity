@@ -44,9 +44,10 @@ class MidiocrityVAE(nn.Module):
                 }
             else:
                 self.decoder_params = decoder_params
-
-        self.encoder = Encoder(**self.encoder_params)
-        self.decoder = Decoder(**self.decoder_params)
+        
+        self.n_cropped_notes = self.encoder_params['n_cropped_notes']
+        self.encoder = Encoder(**self.encoder_params).cuda()
+        self.decoder = Decoder(**self.decoder_params).cuda()
 
         self.use_cuda = use_cuda if torch.cuda.is_available() else False
         if self.use_cuda:
@@ -54,6 +55,9 @@ class MidiocrityVAE(nn.Module):
             self.current_device = torch.cuda.current_device()
         else:
             self.current_device = 'cpu'
+
+        self.cel = nn.CrossEntropyLoss()
+        self.bcel = nn.BCELoss()
 
         # TODO:
         #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
@@ -90,7 +94,11 @@ class MidiocrityVAE(nn.Module):
 
     def loss(self, mu, logvar, X, recon, beta):
         kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
-        reconstruction_loss = F.mse_loss(X, recon)
+        # reconstruction_loss = F.mse_loss(X, recon)
+        reconstruction_loss = self.bcel(
+            recon,
+            X
+        )
         return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
 
     def sample(self, num_samples):
