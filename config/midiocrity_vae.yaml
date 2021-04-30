@@ -1,12 +1,14 @@
+device: cuda
+
 model_params:
   n_cropped_notes: 130
   z_dim: 32
   phrase_size: 256
   encoder_params:
-    hidden_size: 512
+    hidden_size: 32
     num_layers: 3
   decoder_params:
-    hidden_size: 512
+    hidden_size: 32
     num_layers: 3
     n_tracks: 1
 
@@ -16,7 +18,7 @@ data_params:
   batch_size: 16
   shuffle: True
   num_workers: 4
-  batch_limit: 10
+  batch_limit: 10000
 
 train_params:
   seed: 1
@@ -26,7 +28,7 @@ train_params:
   weight_decay: 0.0
   scheduler_gamma: 0.999
   anneal_step: 1000
-  clip_norm: null
+  clip_norm: 5
   beta: 0.1
   beta_increase: 0.0
   beta_increase_step: 1000
@@ -37,5 +39,5 @@ train_params:
 output_params:
   save_dir: "../out/models"
   name: "MidiocrityVAE"
-  print_step: 1
+  print_step: 100
   save_step: 10000
