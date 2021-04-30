@@ -1,5 +1,6 @@
 import torch
 from torch import nn
+from torch.nn import functional as F
 from decoder import Decoder
 from encoder import Encoder
 from torch import lerp
@@ -13,7 +14,7 @@ class MidiocrityVAE(nn.Module):
             config_file=None,
             encoder_params=None,
             decoder_params=None,
-            use_cuda=True
+            use_cuda=True,
     ):
         super(MidiocrityVAE, self).__init__()
 
@@ -54,8 +55,13 @@ class MidiocrityVAE(nn.Module):
         else:
             self.current_device = 'cpu'
 
+        # TODO:
+        #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
+        # self.kl_norm =
+
     # Source: https://github.com/AntixK/PyTorch-VAE
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
+    # Discussion: https://www.jeremyjordan.me/variational-autoencoders/
     def reparameterize(self, mu, logvar):
         """
         Reparameterization trick to sample from N(mu, var) from
@@ -81,6 +87,11 @@ class MidiocrityVAE(nn.Module):
         z = self.reparameterize(mu, logvar)
         out = self.decode(z)
         return mu, logvar, z, out
+
+    def loss(self, mu, logvar, X, recon, beta):
+        kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        reconstruction_loss = F.mse_loss(X, recon)
+        return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
 
     def sample(self, num_samples):
         z = torch.randn((num_samples, self.z_dim), device=self.current_device)

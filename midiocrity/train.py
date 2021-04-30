@@ -11,12 +11,20 @@ import discriminator
 from midiocrity_vae import MidiocrityVAE
 
 import torch
+import torch.nn as nn
+import torch.optim as optim
+import torch.optim.lr_scheduler as lr_scheduler
+
 import numpy as np
 
 from dataset import MidiDataloader
 
+import time
+from datetime import timedelta
+
 from rich import print as rprint
 from rich.table import Table
+from rich.progress import Progress
 
 class midiocrity():
     def __init__(self, **kwargs):
@@ -79,7 +87,8 @@ def main():
             "num_layers": config['model_params']['decoder_params']['num_layers'],
             "batch_size": config['data_params']['batch_size'],
             "n_tracks": config['model_params']['decoder_params']['n_tracks'],
-        }
+        },
+        # kl_weight=config['model_params']['kl_weight']
     )
 
     rprint(mvae)
@@ -104,19 +113,95 @@ def main():
     rprint(table)
     rprint(params)
 
-    loader = MidiDataloader(
-        config['data_params']['tensor_folder'],
-        config['data_params']['batch_size'],
-        config['data_params']['shuffle'],
-        config['data_params']['num_workers'],
-        batch_limit=config['data_params']['batch_limit']
+    optimizer = optim.Adam(
+        mvae.parameters(),
+        lr=config['train_params']['LR'],
+        weight_decay=config['train_params']['weight_decay']
+    )
+    scheduler = lr_scheduler.ExponentialLR(
+        optimizer,
+        gamma=config['train_params']['scheduler_gamma']
     )
 
-    # batch -> [X, y]
-    i = 0
-    for batch in loader:
-        i += 1
-    print(i)
+    beta = config['train_params']['beta']
+
+    with Progress() as progress:
+        step = 0
+        tstart = time.time()
+        tcycle = tstart
+        task = progress.add_task("Training...", total=config['train_params']['epochs'])
+        metrics = np.zeros(3)
+        for epoch in range(config['train_params']['epochs']):
+            loader = MidiDataloader(
+                config['data_params']['tensor_folder'],
+                config['data_params']['batch_size'],
+                config['data_params']['shuffle'],
+                config['data_params']['num_workers'],
+                batch_limit=config['data_params']['batch_limit']
+            )
+
+            # batch -> [X, y]
+            for batch in loader:
+                step += 1
+                X = batch[0]
+                X = X[:, :, :, 0]
+                X[X == 255] = 0
+                X.type(torch.int32)
+                # X = torch.squeeze(X)
+
+                mu, logvar, z, recon = mvae(X)
+                recon = torch.squeeze(recon)
+                kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
+                loss.backward()
+                if config['train_params']['clip_norm'] is not None:
+                    nn.utils.clip_grad_norm_(
+                        mvae.parameters(),
+                        config['train_params']['clip_norm']
+                    )
+                optimizer.step()
+
+                metrics = metrics + np.array([kl_loss, recon_loss, loss])
+
+                if step % config['output_params']['print_step'] == 0:
+                    # Average metrics for this print cycle
+                    metrics /= config['output_params']['print_step']
+                    ttotal = time.time() - tstart
+                    tcycle = time.time() - tcycle
+                    progress.console.print(
+                        f"[{step}] "
+                        f"ttotal: {timedelta(seconds=ttotal)} "
+                        f"tcycle: {timedelta(seconds=tcycle)} "
+                        f"beta: {beta:.3f} "
+                        f"KLDiv: {metrics[0]:.2f} "
+                        f"ReconMSE: {metrics[1]:.2f} "
+                        f"Loss: {metrics[2]:.2f}"
+                    )
+
+                    metrics *= 0
+                    tcycle = time.time()
+
+                if step % config['output_params']['save_step'] == 0:
+                    torch.save(
+                        mvae.state_dict(), (
+                            f"{config['output_params']['save_dir']}"
+                            f"{config['output_params']['name']}"
+                            f".iter-{step}"
+                        )
+                    )
+
+                if step % config['train_params']['anneal_step'] == 0:
+                    scheduler.step()
+                    progress.console.print(f"Learning rate: {scheduler.get_lr():.6f}")
+
+                # Increase KL weight (beta)
+                if step % config['train_params']['beta_increase_step'] == 0:
+                    beta = min(
+                        config['train_params']['beta_max'],
+                        beta + config['train_params']['beta_increase']
+                    )
+
+            progress.advance(task)
+
 
 
 

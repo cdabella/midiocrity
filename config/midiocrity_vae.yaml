@@ -10,22 +10,32 @@ model_params:
     num_layers: 3
     n_tracks: 1
 
+
 data_params:
   tensor_folder: "../data/batches"
   batch_size: 16
   shuffle: True
   num_workers: 4
-  batch_limit: 1
+  batch_limit: 10
 
 train_params:
   seed: 1
   gpus: 1
-  max_nb_epochs: 50
-  max_epochs: 30
+  epochs: 2
   LR: 0.005
   weight_decay: 0.0
-  scheduler_gamma: 0.95
+  scheduler_gamma: 0.999
+  anneal_step: 1000
+  clip_norm: null
+  beta: 0.1
+  beta_increase: 0.0
+  beta_increase_step: 1000
+  beta_max: 100
 
-logging_params:
-  save_dir: "logs/"
-  name: "VanillaVAE"
+
+
+output_params:
+  save_dir: "../out/models"
+  name: "MidiocrityVAE"
+  print_step: 1
+  save_step: 10000

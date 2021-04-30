@@ -392,8 +392,8 @@ class MidiDataset:
 
 		# finally, use [0, 1] interval for ground truth Y and [-1, 1] interval for input/teacher forcing X
 		Y = X.copy()
-		X[X == 1] = 1
-		X[X == 0] = -1
+		# X[X == 1] = 1
+		# X[X == 0] = -1
 
 		return X, Y
 
