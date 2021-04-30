@@ -7,7 +7,7 @@ class Encoder(nn.Module):
     Input to LSTM is of size (batch size, seq_len, input_size) e.g. (128, 256, 1) for drums
     Output from LSTM is of size (seq_len, batch, num_directions*hidden_size)
     '''
-    def __init__(self, z_dim, phrase_size=256, batch_size=16, hidden_size=32, num_layers=3, n_tracks=4, n_cropped_notes=130):
+    def __init__(self, z_dim, phrase_size=256, batch_size=16, hidden_size=32, num_layers=3, n_tracks=1, n_cropped_notes=130):
         super(Encoder, self).__init__()
 
         self.z_dim = z_dim
