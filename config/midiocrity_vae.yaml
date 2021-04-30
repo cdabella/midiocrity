@@ -7,6 +7,7 @@ model_params:
   encoder_params:
     hidden_size: 512
     num_layers: 3
+    n_tracks: 1
   decoder_params:
     hidden_size: 512
     num_layers: 3
