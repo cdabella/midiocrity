@@ -44,7 +44,7 @@ class MidiocrityVAE(nn.Module):
                 }
             else:
                 self.decoder_params = decoder_params
-        
+
         self.n_cropped_notes = self.encoder_params['n_cropped_notes']
         self.encoder = Encoder(**self.encoder_params).cuda()
         self.decoder = Decoder(**self.decoder_params).cuda()
