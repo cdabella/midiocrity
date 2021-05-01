@@ -108,7 +108,6 @@ class MidiocrityVAE(nn.Module):
             torch.argmax(X.permute(0, 2, 1, 3), dim=1)
         )
         if beta > 0:
-            kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
             return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
         else:
             # kl_loss = 0

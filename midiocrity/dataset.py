@@ -293,6 +293,7 @@ class MidiDataset:
 
 			# retrieve corresponding s factors
 			sample_id = sample.split(".")[0]
+			labels.append(sample_id)
 			# song_id = meta_link[sample_id]
 			# label = np.load(os.path.join(self.dataset_path, "labels", str(song_id) + ".npy"))
 			# labels.append(label)
@@ -300,10 +301,10 @@ class MidiDataset:
 		dest = np.array(dest)
 		labels = np.array(labels)
 		# preprocess batch, get X and Y
-		X, Y = self.preprocess(dest)
+		X, _ = self.preprocess(dest)
 		# store everything
 		with open(os.path.join(batch_path, f'tensors-{idx}.pkl'), 'wb') as f:
-			pickle.dump((torch.from_numpy(X), torch.from_numpy(Y)), f, pickle.HIGHEST_PROTOCOL)
+			pickle.dump((torch.from_numpy(X), labels), f, pickle.HIGHEST_PROTOCOL)
 
 	def create_tensor_batches(self, batch_size=128, n_processes=10):
 		print("Building batches from data...")
@@ -334,7 +335,7 @@ class MidiDataset:
 		dataset = dataset.reshape((-1, batch_size))
 		n_of_batches = dataset.shape[0]
 
-		batches = [(idx, dataset[idx, :]) for idx in range(n_of_batches)]
+		batches = [(idx, dataset[idx, :]) for idx in range(n_of_batches)][0:1]
 		with Progress() as progress:
 			task = progress.add_task("Batching data...", total=n_of_batches, visible=True)
 			chunksize = 1
@@ -558,18 +559,18 @@ class MidiDataset:
 
 								tmp.beat_resolution = 4
 								tmp.tempo = song.tempo
-								tmp.name = str(yeah)
+								# tmp.name = str(yeah)
 								tmp.name = f"{idx}_{yeah}"
 
 								# breakpoint()
 								tmp.transpose(shift)
 								tmp.check_validity()
 								# print(os.path.join(processed_folder, f"{idx}_{yeah}" + ".npz"))
-								tmp.save(os.path.join(processed_folder, f"{idx}_{yeah}" + ".npz"))
+								# tmp.save(os.path.join(processed_folder, f"{idx}_{yeah}" + ".npz"))
 								del tmp
 								store_meta = True
 								# adding link to corresponding metadata file
-								fetch_meta[f"{idx}_{yeah}"] = idx
+								fetch_meta[f"{idx}_{yeah}"] = {"artist": artist, "song": filename}
 								yeah += 1
 
 						i += self.bar_size
@@ -585,8 +586,11 @@ class MidiDataset:
 			return time_sign.numerator == 4 and time_sign.denominator == 4
 
 		processed_folder = os.path.join(self.data_path, "pianorolls/")
+		metadata_folder = os.path.join(self.data_path, "metadata/")
 		if not os.path.exists(processed_folder):
 			os.makedirs(processed_folder)
+		if not os.path.exists(metadata_folder):
+			os.makedirs(metadata_folder)
 
 
 		indexed_files = []
@@ -624,3 +628,7 @@ class MidiDataset:
 					fetch_meta.update(result_fetch_meta)
 					progress.console.print(f"pbc: {pbc:10}  yeah: {yeah:10}")
 					progress.advance(task, advance=chunksize)
+
+		metadata_file = os.path.join(metadata_folder, "metadata.json")
+		with open(metadata_file, 'w') as f:
+			json.dump(fetch_meta, f, indent=2)
