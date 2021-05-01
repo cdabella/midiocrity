@@ -71,10 +71,17 @@ class MidiDataloader:
 		self.seed = seed
 		self.batch_limit = batch_limit
 
+		self.phase_indices = {
+			'train': 0,
+			'valid': 1,
+			'test': 2
+		}
+
 		if self.valid_phase(phase):
 			self.phase = phase
 		else:
 			self.phase = 'train'
+		self.phase_idx = self.phase_indices[self.phase]
 
 		if self.seed is not None:
 			random.seed(self.seed)
@@ -89,6 +96,8 @@ class MidiDataloader:
 			self.num_files * (self.tvt_split[0] + self.tvt_split[1])
 		)]
 		self.test_files = self.tensor_files[int(self.num_files * (self.tvt_split[0] + self.tvt_split[1])):]
+
+
 
 	def __iter__(self):
 		if self.batch_limit is not None:
@@ -110,17 +119,21 @@ class MidiDataloader:
 				yield batch
 				if self.batch_limit:
 					count += 1
-					if count >= self.batch_limit:
+					if count >= self.batch_limit * self.tvt_split[self.phase_idx]:
 						break
 
 			del X, y, dataset, dataloader
-			if self.batch_limit is not None and count >= self.batch_limit:
+			if (
+					self.batch_limit is not None and
+					count >= self.batch_limit * self.tvt_split[self.phase_idx]
+			):
 				break
 
 	def set_phase(self, phase):
 		if phase not in ['train', 'valid', 'test']:
 			raise ValueError(f'Phase not in [test, validation, train]: {phase}')
 		self.phase = phase
+		self.phase_idx = self.phase_indices[self.phase]
 
 	@staticmethod
 	def valid_phase(phase):

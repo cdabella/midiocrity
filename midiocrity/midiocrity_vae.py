@@ -60,7 +60,7 @@ class MidiocrityVAE(nn.Module):
         # else:
         #     self.current_device = 'cpu'
 
-        self.cel = nn.CrossEntropyLoss()
+        self.cel = nn.CrossEntropyLoss(reduction='sum')
         self.bcel = nn.BCELoss()
 
         # TODO:
@@ -97,7 +97,8 @@ class MidiocrityVAE(nn.Module):
         return mu, logvar, z, out
 
     def loss(self, mu, logvar, X, recon, beta):
-        kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        # kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        kl_loss = -0.5 * torch.mean(1 + logvar - mu ** 2 - logvar.exp())
         # reconstruction_loss = F.mse_loss(X, recon)
         # reconstruction_loss = self.bcel(
         #     recon,
@@ -106,7 +107,7 @@ class MidiocrityVAE(nn.Module):
         reconstruction_loss = self.cel(
             recon.permute(0, 2, 1, 3),
             torch.argmax(X.permute(0, 2, 1, 3), dim=1)
-        )
+        ) / X.shape[0]
         if beta > 0:
             return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
         else:

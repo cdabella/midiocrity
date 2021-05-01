@@ -16,30 +16,30 @@ model_params:
 
 data_params:
   tensor_folder: "../data/batches"
-  batch_size: 16  # pickled tensors are in 256 batches, for even batches use factor of 256
+  batch_size: 16  # for even batches use factor of 1024
   shuffle: True
   num_workers: 4
-  batch_limit: 10000
+  batch_limit: 1000
 
 train_params:
   seed: 1
   gpus: 1
-  epochs: 2
+  epochs: 10
   LR: 0.005
-  weight_decay: 0.0001
+  weight_decay: 0.0005
   scheduler_gamma: 0.999
   anneal_step: 1000
   clip_norm: 5
   beta_init: 0.0
   beta_increase: 0.2
-  beta_increase_step_start: 1000
-  beta_increase_step_rate : 100
-  beta_max: 8
+  beta_increase_step_start: 700
+  beta_increase_step_rate : 20
+  beta_max: 1
 
 
 
 output_params:
-  save_dir: "../out/models"
+  save_dir: "../out/"
   name: "MidiocrityVAE"
-  print_step: 10
-  save_step: 10000
+  print_step: 20
+  save_step: 1000
