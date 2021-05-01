@@ -79,8 +79,7 @@ def main():
             "batch_size": config['data_params']['batch_size'],
             "n_tracks": config['model_params']['decoder_params']['n_tracks'],
         },
-        device=device
-        # kl_weight=config['model_params']['kl_weight']
+        device=device,
     )
 
 
@@ -132,143 +131,144 @@ def main():
 
     train_losses = []
     valid_losses = []
-
-    with Progress(auto_refresh=False) as progress:
-        pprint = progress.console.print
-        step_tot = 0
-        tstart = time.time()
-        tcycle = tstart
-        task = progress.add_task("Training...", total=config['train_params']['epochs'])
-        metrics = np.zeros(3)
-
-
-        train_epoch_losses = np.zeros(3)
-        valid_epoch_losses = np.zeros(3)
-        for epoch in range(config['train_params']['epochs']):
-            step_batch = 0
-
-            # Train
-            mvae.train()
-            loader.set_phase('train')
-            for batch in loader:
-                step_tot += 1
-                step_batch += 1
-                X = batch[0]
-                X = X[:, :, :, 0:1] # Only train the drum tracks
-                X = X.to(device=device, dtype=dtype)
-
-                mvae.zero_grad()
-                mu, logvar, z, recon = mvae(X)
-
-                kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
-                loss.backward()
-
-                if config['train_params']['clip_norm'] is not None:
-                    nn.utils.clip_grad_norm_(
-                        mvae.parameters(),
-                        config['train_params']['clip_norm']
-                    )
-
-                optimizer.step()
-
-                losses_np = np.array([kl_loss, recon_loss, loss])
-                metrics = metrics + losses_np
-                train_epoch_losses = train_epoch_losses + losses_np
+    with torch.autograd.set_detect_anomaly(True):
+        with Progress(auto_refresh=False) as progress:
+            pprint = progress.console.print
+            step_tot = 0
+            tstart = time.time()
+            tcycle = tstart
+            task = progress.add_task("Training...", total=config['train_params']['epochs'])
+            metrics = np.zeros(3)
 
 
-                if step_tot % config['output_params']['print_step'] == 0:
-                    # Average metrics for this print cycle
-                    metrics /= config['output_params']['print_step']
-                    ttotal = time.time() - tstart
-                    tcycle = time.time() - tcycle
-                    pprint(
-                        f"Epoch {epoch} [{step_tot}] "
-                        f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
-                        f"tcycle: {str(timedelta(seconds=tcycle)).split('.')[0]} "
-                        f"beta: {beta:.3f} "
-                        f"KLDiv: {metrics[0]:.4f} "
-                        f"ReconCEL: {metrics[1]:.4f} "
-                        f"Loss: {metrics[2]:.4f}"
-                    )
+            train_epoch_losses = np.zeros(3)
+            valid_epoch_losses = np.zeros(3)
 
-                    metrics *= 0
-                    tcycle = time.time()
+            for epoch in range(config['train_params']['epochs']):
+                step_batch = 0
 
-                if step_tot % config['output_params']['save_step'] == 0:
-                    torch.save(
-                        mvae.state_dict(), (
-                            f"{config['output_params']['save_dir']}"
-                            f"{config['output_params']['name']}"
-                            f".iter-{step_tot}"
-                        )
-                    )
-
-                if step_tot % config['train_params']['anneal_step'] == 0:
-                    scheduler.step()
-                    pprint(f"Learning rate: {scheduler.get_last_lr()[0]:.6f}")
-
-                # Increase KL weight (beta)
-                if (
-                    step_tot > config['train_params']['beta_increase_step_start'] and
-                    step_tot % config['train_params']['beta_increase_step_rate'] == 0
-                ):
-                    beta = min(
-                        config['train_params']['beta_max'],
-                        beta + config['train_params']['beta_increase']
-                    )
-
-            train_epoch_losses /= step_batch
-            train_losses.append(train_epoch_losses)
-            ttotal = time.time() - tstart
-            pprint(
-                f"\n{'#' * 80}\n"
-                f"Epoch {epoch}: Training complete"
-                f"Epoch {epoch} [{step_tot}] "
-                f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
-                f"Train KLDiv: {train_epoch_losses[0]:.4f} "
-                f"Train ReconCEL: {train_epoch_losses[1]:.4f} "
-                f"Train Loss: {train_epoch_losses[2]:.4f}"
-            )
-            train_epoch_losses *= 0
-
-            # Validation
-            step_batch = 0
-            mvae.eval()
-            loader.set_phase('valid')
-            with torch.no_grad():
+                # Train
+                mvae.train()
+                loader.set_phase('train')
                 for batch in loader:
+                    step_tot += 1
                     step_batch += 1
                     X = batch[0]
-                    X = X[:, :, :, 0:1]  # Only train the drum tracks
+                    X = X[:, :, :, 0:1] # Only train the drum tracks
                     X = X.to(device=device, dtype=dtype)
+
+                    mvae.zero_grad()
                     mu, logvar, z, recon = mvae(X)
+
                     kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
+                    loss.backward()
+
+                    if config['train_params']['clip_norm'] is not None:
+                        nn.utils.clip_grad_norm_(
+                            mvae.parameters(),
+                            config['train_params']['clip_norm']
+                        )
+
+                    optimizer.step()
+
                     losses_np = np.array([kl_loss, recon_loss, loss])
-                    valid_epoch_losses = valid_epoch_losses + losses_np
+                    metrics = metrics + losses_np
+                    train_epoch_losses = train_epoch_losses + losses_np
 
-            valid_epoch_losses /= step_batch
-            valid_losses.append(train_epoch_losses)
-            ttotal = time.time() - tstart
-            pprint(
-                f"Epoch {epoch}: Validation complete"
-                f"Epoch {epoch} [{step_tot}] "
-                f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
-                f"Valid KLDiv: {valid_epoch_losses[0]:.4f} "
-                f"Valid ReconCEL: {valid_epoch_losses[1]:.4f} "
-                f"Valid Loss: {valid_epoch_losses[2]:.4f}"
-                f"\n{'#' * 80}\n"
-            )
 
-            valid_epoch_losses *= 0
-            torch.save(
-                mvae.state_dict(), (
-                    f"{config['output_params']['save_dir']}"
-                    f"{config['output_params']['name']}"
-                    f".epoch-{epoch}.pt"
+                    if step_tot % config['output_params']['print_step'] == 0:
+                        # Average metrics for this print cycle
+                        metrics /= config['output_params']['print_step']
+                        ttotal = time.time() - tstart
+                        tcycle = time.time() - tcycle
+                        pprint(
+                            f"Epoch {epoch} [{step_tot}] "
+                            f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
+                            f"tcycle: {str(timedelta(seconds=tcycle)).split('.')[0]} "
+                            f"beta: {beta:.3f} "
+                            f"KLDiv: {metrics[0]:.4f} "
+                            f"ReconCEL: {metrics[1]:.4f} "
+                            f"Loss: {metrics[2]:.4f}"
+                        )
+
+                        metrics *= 0
+                        tcycle = time.time()
+
+                    if step_tot % config['output_params']['save_step'] == 0:
+                        torch.save(
+                            mvae.state_dict(), (
+                                f"{config['output_params']['save_dir']}"
+                                f"{config['output_params']['name']}"
+                                f".iter-{step_tot}.pt"
+                            )
+                        )
+
+                    if step_tot % config['train_params']['anneal_step'] == 0:
+                        scheduler.step()
+                        pprint(f"Learning rate: {scheduler.get_last_lr()[0]:.6f}")
+
+                    # Increase KL weight (beta)
+                    if (
+                        step_tot > config['train_params']['beta_increase_step_start'] and
+                        step_tot % config['train_params']['beta_increase_step_rate'] == 0
+                    ):
+                        beta = min(
+                            config['train_params']['beta_max'],
+                            beta + config['train_params']['beta_increase']
+                        )
+
+                train_epoch_losses /= step_batch
+                train_losses.append(train_epoch_losses)
+                ttotal = time.time() - tstart
+                pprint(
+                    f"\n{'#' * 80}\n"
+                    f"Epoch {epoch}: Training complete\n"
+                    f"Epoch {epoch} [{step_tot}] "
+                    f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
+                    f"Train KLDiv: {train_epoch_losses[0]:.4f} "
+                    f"Train ReconCEL: {train_epoch_losses[1]:.4f} "
+                    f"Train Loss: {train_epoch_losses[2]:.4f}"
                 )
-            )
+                train_epoch_losses *= 0
 
-            progress.advance(task)
+                # Validation
+                step_batch = 0
+                mvae.eval()
+                loader.set_phase('valid')
+                with torch.no_grad():
+                    for batch in loader:
+                        step_batch += 1
+                        X = batch[0]
+                        X = X[:, :, :, 0:1]  # Only train the drum tracks
+                        X = X.to(device=device, dtype=dtype)
+                        mu, logvar, z, recon = mvae(X)
+                        kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
+                        losses_np = np.array([kl_loss, recon_loss, loss])
+                        valid_epoch_losses = valid_epoch_losses + losses_np
+
+                valid_epoch_losses /= step_batch
+                valid_losses.append(train_epoch_losses)
+                ttotal = time.time() - tstart
+                pprint(
+                    f"Epoch {epoch}: Validation complete\n"
+                    f"Epoch {epoch} [{step_tot}] "
+                    f"ttotal: {str(timedelta(seconds=ttotal)).split('.')[0]} "
+                    f"Valid KLDiv: {valid_epoch_losses[0]:.4f} "
+                    f"Valid ReconCEL: {valid_epoch_losses[1]:.4f} "
+                    f"Valid Loss: {valid_epoch_losses[2]:.4f}"
+                    f"\n{'#' * 80}\n"
+                )
+
+                valid_epoch_losses *= 0
+                torch.save(
+                    mvae.state_dict(), (
+                        f"{config['output_params']['save_dir']}"
+                        f"{config['output_params']['name']}"
+                        f".epoch-{epoch}.pt"
+                    )
+                )
+
+                progress.advance(task)
 
     # Epoch x (kl_loss, recon_loss, loss)
     train_losses = np.stack(train_losses)

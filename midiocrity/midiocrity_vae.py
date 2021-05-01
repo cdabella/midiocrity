@@ -18,7 +18,6 @@ class MidiocrityVAE(nn.Module):
     ):
         super(MidiocrityVAE, self).__init__()
 
-        self.z_dim = 32
         if config_file:
             pass
         else:
@@ -49,6 +48,10 @@ class MidiocrityVAE(nn.Module):
 
         self.device = device
         self.n_cropped_notes = self.encoder_params['n_cropped_notes']
+        self.phrase_size = self.encoder_params['phrase_size']
+        self.z_dim = self.encoder_params['z_dim']
+        self.batch_size =self.encoder_params['batch_size']
+
         self.encoder = Encoder(**self.encoder_params).to(device)
         self.decoder = Decoder(**self.decoder_params).to(device)
 
@@ -65,7 +68,7 @@ class MidiocrityVAE(nn.Module):
 
         # TODO:
         #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
-        # self.kl_norm =
+        self.kl_norm = self.n_cropped_notes * self.phrase_size / self.batch_size
 
     # Source: https://github.com/AntixK/PyTorch-VAE
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
@@ -109,7 +112,7 @@ class MidiocrityVAE(nn.Module):
             torch.argmax(X.permute(0, 2, 1, 3), dim=1)
         ) / X.shape[0]
         if beta > 0:
-            return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
+            return kl_loss, reconstruction_loss, kl_loss * beta * self.kl_norm + reconstruction_loss
         else:
             # kl_loss = 0
             return kl_loss, reconstruction_loss, reconstruction_loss
