@@ -25,50 +25,50 @@ class Encoder(nn.Module):
                 torch.nn.LSTM(input_size=self.n_cropped_notes, hidden_size=self.hidden_size, num_layers=self.num_layers,
                               bidirectional=True, batch_first=True),
             )
-        self.fc_z_mean = nn.Sequential(
-            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, self.z_dim),
-            # nn.ReLU()  #
-        )
-        self.fc_logvar=nn.Sequential(
-            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, 32),
-            nn.ReLU(),
-            nn.Linear(32, self.z_dim),
-            nn.LeakyReLU()
-            # nn.Softplus()
-            # nn.ReLU()
-        )
         # self.fc_z_mean = nn.Sequential(
-        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
-        #     # nn.ReLU(),
-        #     # nn.Linear(128, 64),
-        #     # nn.ReLU(),
-        #     # nn.Linear(64, 32),
-        #     # nn.ReLU(),
-        #     # nn.Linear(32, self.z_dim),
+        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 64),
+        #     nn.ReLU(),
+        #     nn.Linear(64, 32),
+        #     nn.ReLU(),
+        #     nn.Linear(32, self.z_dim),
         #     # nn.ReLU()  #
         # )
-        # self.fc_logvar = nn.Sequential(
-        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
-        #     # nn.ReLU(),
-        #     # nn.Linear(128, 64),
-        #     # nn.ReLU(),
-        #     # nn.Linear(64, 32),
-        #     # nn.ReLU(),
-        #     # nn.Linear(32, self.z_dim),
+        # self.fc_logvar=nn.Sequential(
+        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 64),
+        #     nn.ReLU(),
+        #     nn.Linear(64, 32),
+        #     nn.ReLU(),
+        #     nn.Linear(32, self.z_dim),
         #     nn.LeakyReLU()
         #     # nn.Softplus()
         #     # nn.ReLU()
         # )
+        self.fc_z_mean = nn.Sequential(
+            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
+            # nn.ReLU(),
+            # nn.Linear(128, 64),
+            # nn.ReLU(),
+            # nn.Linear(64, 32),
+            # nn.ReLU(),
+            # nn.Linear(32, self.z_dim),
+            # nn.ReLU()  #
+        )
+        self.fc_logvar = nn.Sequential(
+            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
+            # nn.ReLU(),
+            # nn.Linear(128, 64),
+            # nn.ReLU(),
+            # nn.Linear(64, 32),
+            # nn.ReLU(),
+            # nn.Linear(32, self.z_dim),
+            nn.LeakyReLU()
+            # nn.Softplus()
+            # nn.ReLU()
+        )
         # https://stackoverflow.com/questions/49634488/keras-variational-autoencoder-nan-loss
         self.init_weights_to_zero(self.fc_logvar)
 

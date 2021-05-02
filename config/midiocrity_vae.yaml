@@ -2,7 +2,7 @@ device: cuda
 
 model_params:
   n_cropped_notes: 130
-  z_dim: 16
+  z_dim: 8
   phrase_size: 256
   encoder_params:
     hidden_size: 128
@@ -30,10 +30,10 @@ train_params:
   scheduler_gamma: 0.999
   anneal_step: 1000
   clip_norm: 5
-  beta_init: 0.0
-  beta_increase: 0.0000001
+  beta_init: 0.000001
+  beta_increase: 0.000001
   beta_increase_step_start: 1000
-  beta_increase_step_rate : 20
+  beta_increase_step_rate : 1
   beta_max: 1.0
 
 
@@ -41,5 +41,5 @@ train_params:
 output_params:
   save_dir: "../out/"
   name: "MidiocrityVAE"
-  print_step: 20
+  print_step: 100
   save_step: 1000

@@ -131,7 +131,7 @@ def main():
 
     train_losses = []
     valid_losses = []
-    with torch.autograd.set_detect_anomaly(True):
+    with torch.autograd.set_detect_anomaly(False):
         with Progress(auto_refresh=False) as progress:
             pprint = progress.console.print
             step_tot = 0
@@ -159,6 +159,7 @@ def main():
 
                     mvae.zero_grad()
                     mu, logvar, z, recon = mvae(X)
+                    # pprint(mu, logvar, z, recon)
 
                     kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
                     loss.backward()

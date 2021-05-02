@@ -68,7 +68,7 @@ class MidiocrityVAE(nn.Module):
 
         # TODO:
         #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
-        self.kl_norm = self.n_cropped_notes * self.phrase_size / self.batch_size
+        self.kl_norm = self.phrase_size / self.batch_size
 
     # Source: https://github.com/AntixK/PyTorch-VAE
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
@@ -101,7 +101,7 @@ class MidiocrityVAE(nn.Module):
 
     def loss(self, mu, logvar, X, recon, beta):
         # kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
-        kl_loss = -0.5 * torch.mean(1 + logvar - mu ** 2 - logvar.exp())
+        kl_loss = -0.5 * torch.mean(1 + logvar - mu ** 2 - logvar.exp())  # ELBO
         # reconstruction_loss = F.mse_loss(X, recon)
         # reconstruction_loss = self.bcel(
         #     recon,
