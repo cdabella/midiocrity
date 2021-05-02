@@ -74,13 +74,6 @@ class MidiocrityVAE(nn.Module):
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
     # Discussion: https://www.jeremyjordan.me/variational-autoencoders/
     def reparameterize(self, mu, logvar):
-        """
-        Reparameterization trick to sample from N(mu, var) from
-        N(0,1).
-        :param mu: (Tensor) Mean of the latent Gaussian [B x D]
-        :param logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
-        :return: (Tensor) [B x D]
-        """
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps * std + mu

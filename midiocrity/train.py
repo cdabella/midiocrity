@@ -219,7 +219,7 @@ def main():
                         )
 
                 train_epoch_losses /= step_batch
-                train_losses.append(train_epoch_losses)
+                train_losses.append(train_epoch_losses.copy())
                 ttotal = time.time() - tstart
                 pprint(
                     f"\n{'#' * 80}\n"
@@ -248,7 +248,7 @@ def main():
                         valid_epoch_losses = valid_epoch_losses + losses_np
 
                 valid_epoch_losses /= step_batch
-                valid_losses.append(train_epoch_losses)
+                valid_losses.append(train_epoch_losses.copy())
                 ttotal = time.time() - tstart
                 pprint(
                     f"Epoch {epoch}: Validation complete\n"
