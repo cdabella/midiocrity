@@ -172,7 +172,11 @@ def main():
 
                     optimizer.step()
 
-                    losses_np = np.array([kl_loss, recon_loss, loss])
+                    losses_np = np.array([
+                        kl_loss.detach().cpu().numpy(),
+                        recon_loss.detach().cpu().numpy(),
+                        loss.detach().cpu().numpy()
+                    ])
                     metrics = metrics + losses_np
                     train_epoch_losses = train_epoch_losses + losses_np
 
@@ -244,11 +248,15 @@ def main():
                         X = X.to(device=device, dtype=dtype)
                         mu, logvar, z, recon = mvae(X)
                         kl_loss, recon_loss, loss = mvae.loss(mu, logvar, X, recon, beta)
-                        losses_np = np.array([kl_loss, recon_loss, loss])
+                        losses_np = np.array([
+                            kl_loss.detach().cpu().numpy(),
+                            recon_loss.detach().cpu().numpy(),
+                            loss.detach().cpu().numpy()
+                        ])
                         valid_epoch_losses = valid_epoch_losses + losses_np
 
                 valid_epoch_losses /= step_batch
-                valid_losses.append(train_epoch_losses.copy())
+                valid_losses.append(valid_epoch_losses.copy())
                 ttotal = time.time() - tstart
                 pprint(
                     f"Epoch {epoch}: Validation complete\n"

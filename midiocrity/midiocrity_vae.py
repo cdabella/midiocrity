@@ -68,7 +68,7 @@ class MidiocrityVAE(nn.Module):
 
         # TODO:
         #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
-        self.kl_norm = self.phrase_size / self.batch_size
+        self.kl_norm = self.z_dim / self.phrase_size
 
     # Source: https://github.com/AntixK/PyTorch-VAE
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
