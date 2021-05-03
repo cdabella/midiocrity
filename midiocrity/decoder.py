@@ -42,7 +42,7 @@ class Decoder(nn.Module):
                 f"track{track_idx}_fc",
                 nn.Sequential(
                     nn.Linear(hidden_size * self.num_directions, n_cropped_notes),
-                    nn.Softmax(dim=-1)
+                    # nn.Softmax(dim=-1)
                 )
             )
 

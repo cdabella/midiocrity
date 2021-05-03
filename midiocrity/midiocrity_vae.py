@@ -14,11 +14,10 @@ class MidiocrityVAE(nn.Module):
             config_file=None,
             encoder_params=None,
             decoder_params=None,
-            use_cuda=True,
+            device=None,
     ):
         super(MidiocrityVAE, self).__init__()
 
-        self.z_dim = 32
         if config_file:
             pass
         else:
@@ -47,35 +46,34 @@ class MidiocrityVAE(nn.Module):
             else:
                 self.decoder_params = decoder_params
 
+        self.device = device
         self.n_cropped_notes = self.encoder_params['n_cropped_notes']
-        self.encoder = Encoder(**self.encoder_params).cuda()
-        self.decoder = Decoder(**self.decoder_params).cuda()
+        self.phrase_size = self.encoder_params['phrase_size']
+        self.z_dim = self.encoder_params['z_dim']
+        self.batch_size =self.encoder_params['batch_size']
 
-        self.use_cuda = use_cuda if torch.cuda.is_available() else False
-        if self.use_cuda:
-            self.cuda()
-            self.current_device = torch.cuda.current_device()
-        else:
-            self.current_device = 'cpu'
+        self.encoder = Encoder(**self.encoder_params).to(device)
+        self.decoder = Decoder(**self.decoder_params).to(device)
 
-        self.cel = nn.CrossEntropyLoss()
+
+        # self.use_cuda = use_cuda if torch.cuda.is_available() else False
+        # if self.use_cuda:
+        #     self.cuda()
+        #     self.current_device = torch.cuda.current_device()
+        # else:
+        #     self.current_device = 'cpu'
+
+        self.cel = nn.CrossEntropyLoss(reduction='sum')
         self.bcel = nn.BCELoss()
 
         # TODO:
         #  Implement beta scaling (https://openreview.net/forum?id=Sy2fzU9gl)
-        # self.kl_norm =
+        self.kl_norm = self.z_dim / self.phrase_size
 
     # Source: https://github.com/AntixK/PyTorch-VAE
     # Method from: https://arxiv.org/pdf/1312.6114v10.pdf
     # Discussion: https://www.jeremyjordan.me/variational-autoencoders/
     def reparameterize(self, mu, logvar):
-        """
-        Reparameterization trick to sample from N(mu, var) from
-        N(0,1).
-        :param mu: (Tensor) Mean of the latent Gaussian [B x D]
-        :param logvar: (Tensor) Standard deviation of the latent Gaussian [B x D]
-        :return: (Tensor) [B x D]
-        """
         std = torch.exp(0.5 * logvar)
         eps = torch.randn_like(std)
         return eps * std + mu
@@ -95,16 +93,25 @@ class MidiocrityVAE(nn.Module):
         return mu, logvar, z, out
 
     def loss(self, mu, logvar, X, recon, beta):
-        kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        # kl_loss = torch.mean(-0.5 * torch.sum(1 + logvar - mu ** 2 - logvar.exp(), dim=1), dim=0)
+        kl_loss = -0.5 * torch.mean(1 + logvar - mu ** 2 - logvar.exp())  # ELBO
         # reconstruction_loss = F.mse_loss(X, recon)
-        reconstruction_loss = self.bcel(
-            recon,
-            X
-        )
-        return kl_loss, reconstruction_loss, kl_loss * beta + reconstruction_loss
+        # reconstruction_loss = self.bcel(
+        #     recon,
+        #     X
+        # )
+        reconstruction_loss = self.cel(
+            recon.permute(0, 2, 1, 3),
+            torch.argmax(X.permute(0, 2, 1, 3), dim=1)
+        ) / X.shape[0]
+        if beta > 0:
+            return kl_loss, reconstruction_loss, kl_loss * beta * self.kl_norm + reconstruction_loss
+        else:
+            # kl_loss = 0
+            return kl_loss, reconstruction_loss, reconstruction_loss
 
     def sample(self, num_samples):
-        z = torch.randn((num_samples, self.z_dim), device=self.current_device)
+        z = torch.randn((num_samples, self.z_dim), device=self.device)
         out = self.decode(z)
         return out
 

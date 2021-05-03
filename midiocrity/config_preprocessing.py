@@ -5,9 +5,9 @@ model_params = {
 }
 
 preprocessing_params = {
-	"prep_batch_size": 128,
+	"prep_batch_size": 1024,
 	"prep_dataset_name": "",
-	"midi_dataset_path": "./data/clean_midi"
+	"midi_dataset_path": "../data/clean_midi"
 }
 
 midi_params = {
@@ -27,8 +27,8 @@ general_params = {
 	"checkpoints_path": "./out/checkpoints/",
 	"plots_path": "./out/plots",
 	"preprocessed_midi_path": "./preprocessed_midi/",
-	"dataset_path": "./data/clean_midi",
-	"data_path": "./data",
+	"dataset_path": "../data/clean_midi",
+	"data_path": "../data",
 	"autoencoded_path": "./out/autoencoded/",
 	"interpolations_path": "./out/interpolation/",
 	"sampled_path": "./out/sampled/",

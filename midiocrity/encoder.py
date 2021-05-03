@@ -25,34 +25,52 @@ class Encoder(nn.Module):
                 torch.nn.LSTM(input_size=self.n_cropped_notes, hidden_size=self.hidden_size, num_layers=self.num_layers,
                               bidirectional=True, batch_first=True),
             )
-            setattr(
-                self,
-                f"track{track_idx}_fc_z_mean",
-                nn.Sequential(
-                    nn.Linear(self.phrase_size * 2 * self.hidden_size, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, 64),
-                    nn.ReLU(),
-                    nn.Linear(64, 32),
-                    nn.ReLU(),
-                    nn.Linear(32, self.z_dim),
-                    nn.ReLU()
-                )
-            )
-            setattr(
-                self,
-                f"track{track_idx}_fc_logvar",
-                nn.Sequential(
-                    nn.Linear(self.phrase_size * 2 * self.hidden_size, 128),
-                    nn.ReLU(),
-                    nn.Linear(128, 64),
-                    nn.ReLU(),
-                    nn.Linear(64, 32),
-                    nn.ReLU(),
-                    nn.Linear(32, self.z_dim),
-                    nn.ReLU()
-                )
-            )
+        # self.fc_z_mean = nn.Sequential(
+        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 64),
+        #     nn.ReLU(),
+        #     nn.Linear(64, 32),
+        #     nn.ReLU(),
+        #     nn.Linear(32, self.z_dim),
+        #     # nn.ReLU()  #
+        # )
+        # self.fc_logvar=nn.Sequential(
+        #     nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, 128),
+        #     nn.ReLU(),
+        #     nn.Linear(128, 64),
+        #     nn.ReLU(),
+        #     nn.Linear(64, 32),
+        #     nn.ReLU(),
+        #     nn.Linear(32, self.z_dim),
+        #     nn.LeakyReLU()
+        #     # nn.Softplus()
+        #     # nn.ReLU()
+        # )
+        self.fc_z_mean = nn.Sequential(
+            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
+            # nn.ReLU(),
+            # nn.Linear(128, 64),
+            # nn.ReLU(),
+            # nn.Linear(64, 32),
+            # nn.ReLU(),
+            # nn.Linear(32, self.z_dim),
+            # nn.ReLU()  #
+        )
+        self.fc_logvar = nn.Sequential(
+            nn.Linear(self.phrase_size * 2 * self.hidden_size * self.n_tracks, z_dim),
+            # nn.ReLU(),
+            # nn.Linear(128, 64),
+            # nn.ReLU(),
+            # nn.Linear(64, 32),
+            # nn.ReLU(),
+            # nn.Linear(32, self.z_dim),
+            nn.LeakyReLU()
+            # nn.Softplus()
+            # nn.ReLU()
+        )
+        # https://stackoverflow.com/questions/49634488/keras-variational-autoencoder-nan-loss
+        self.init_weights_to_zero(self.fc_logvar)
 
     '''
     Forward pass of encoder with pytorch based on musae encoders.py
@@ -62,24 +80,37 @@ class Encoder(nn.Module):
     def forward(self, input):
         track_z_means = []
         track_z_logvars = []
+        track_outputs = []
         for track_idx in range(self.n_tracks):
             track_input = torch.squeeze(input[:, :, :, track_idx])
             track_input = track_input.float()
             track_output, _ = getattr(self, f"track{track_idx}_lstm")(track_input)
+            track_outputs.append(track_output)
 
-            # Reshape, flattening each sample
-            track_output = torch.flatten(track_output, start_dim=1)
+        track_outputs = torch.stack(track_outputs, dim=-1)
+        track_outputs = torch.flatten(track_outputs, start_dim=1)
+        output_z_mean = self.fc_z_mean(track_outputs)
+        output_z_logvar = self.fc_logvar(track_outputs)
+        # output_z_logvar = torch.clamp(self.fc_logvar(track_outputs), max=100)
 
-            # 4 Fully Connected Layers for z_mean
-            track_output_z_mean = getattr(self, f"track{track_idx}_fc_z_mean")(track_output)
-
-            # 4 Fully Connected Layers for z_logvar
-            track_output_z_logvar = getattr(self, f"track{track_idx}_fc_logvar")(track_output)
-
-            track_z_means.append(track_output_z_mean)
-            track_z_logvars.append(track_output_z_logvar)
-
-        output_z_mean = torch.stack(track_z_means, dim=-1)
-        output_z_logvar = torch.stack(track_z_logvars, dim=-1)
+        # # Reshape, flattening each sample
+        # track_output = torch.flatten(track_output, start_dim=1)
+        #
+        # # 4 Fully Connected Layers for z_mean
+        # track_output_z_mean = getattr(self, f"track{track_idx}_fc_z_mean")(track_output)
+        #
+        # # 4 Fully Connected Layers for z_logvar
+        # track_output_z_logvar = getattr(self, f"track{track_idx}_fc_logvar")(track_output)
+        #
+        # track_z_means.append(track_output_z_mean)
+        # track_z_logvars.append(track_output_z_logvar)
+        #
+        # output_z_mean = torch.stack(track_z_means, dim=-1)
+        # output_z_logvar = torch.stack(track_z_logvars, dim=-1)
 
         return output_z_mean, output_z_logvar
+
+    def init_weights_to_zero(self, m):
+        if type(m) == nn.Linear:
+            torch.nn.init.zeros_(m.weight)
+            m.bias.data.fill_(0.0)
