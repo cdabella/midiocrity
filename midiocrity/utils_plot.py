@@ -1,4 +1,7 @@
 from midiocrity_vae import MidiocrityVAE
+from dataset import MidiDataloader
+import json
+
 import yaml
 from rich import print as rprint
 import torch
@@ -6,14 +9,16 @@ import numpy as np
 import matplotlib.pyplot as plt; plt.rcParams['figure.dpi'] = 100
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
+with open('../config/midiocrity_vae.yaml', 'r') as file:
+    try:
+        config = yaml.safe_load(file)
+    except yaml.YAMLError as exc:
+        print(exc)
+
+with open('../data/metadata.json') as json_file:
+    data = json.load(json_file)
 
 def load_dummy_model():
-    with open('../config/midiocrity_vae.yaml', 'r') as file:
-        try:
-            config = yaml.safe_load(file)
-        except yaml.YAMLError as exc:
-            print(exc)
-
     # rprint(config)
 
     # For reproducibility
@@ -46,6 +51,19 @@ def load_dummy_model():
     )
     return model
 
+def generate_loader():
+    loader = MidiDataloader(
+        config['data_params']['tensor_folder'],
+        config['data_params']['batch_size'],
+        config['data_params']['shuffle'],
+        config['data_params']['num_workers'],
+        batch_limit=config['data_params']['batch_limit']
+    )
+    loader.phase = 'test'
+    return loader
+
+def get_metadata():
+    return data
 
 # Based on https://avandekleut.github.io/vae/
 def plot_latent_nolabel(autoencoder, data, num_batches=100):
