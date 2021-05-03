@@ -140,8 +140,7 @@ dmypy.json
 /data/clean_midi/
 /data/pianorolls/
 /data/batches/
+/data/metadata/
 
 # Outputs
 out/
-
-
