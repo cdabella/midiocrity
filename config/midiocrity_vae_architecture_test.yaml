@@ -13,6 +13,7 @@ model_params:
     num_layers: 3
     n_tracks: 1
 
+
 data_params:
   tensor_folder: "../data/batches"
   batch_size: 16  # for even batches use factor of 1024
@@ -22,6 +23,7 @@ data_params:
 
 train_params:
   seed: 1
+  gpus: 1
   epochs: 20
   LR: 0.0001
   weight_decay: 0.0 #0.0001
