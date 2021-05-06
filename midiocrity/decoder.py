@@ -26,8 +26,8 @@ class Decoder(nn.Module):
         #     nn.tanh()
         # )
         # self.latent_to_c_0 = nn.Sequential(
-        #     nn.Linear(z_dim, self.num_layers * self.num_directions * self.hidden_size),
-        #     nn.tanh()
+        #     nn.Linear(z_dim, self.num_directions * self.hidden_size),
+        #     nn.Tanh()
         # )
 
         for track_idx in range(self.n_tracks):
@@ -56,14 +56,17 @@ class Decoder(nn.Module):
         h_0 = self.latent_to_h_0(x)
         h_0 = h_0.view(self.num_directions, self.batch_size, self.hidden_size)
         h_0 = h_0.expand(self.num_layers * self.num_directions, self.batch_size, self.hidden_size).contiguous()
-        # h_0 = h_0.view(self.batch_size, self.num_directions, self.hidden_size)
-        # h_0 = h_0.expand(self.batch_size, self.num_layers * self.num_directions, self.hidden_size)
+
+        # c_0 = self.latent_to_c_0(x)
+        # c_0 = c_0.view(self.num_directions, self.batch_size, self.hidden_size)
+        # c_0 = c_0.expand(self.num_layers * self.num_directions, self.batch_size, self.hidden_size).contiguous()
 
         x = x.view(self.batch_size, 1, self.z_dim).expand(self.batch_size, self.phrase_size, self.z_dim)
         
         tracks = []
         for track_idx in range(self.n_tracks):
             track_x, _ = getattr(self, f"track{track_idx}_lstm")(x, (h_0, h_0))
+            # track_x, _ = getattr(self, f"track{track_idx}_lstm")(x, (h_0, c_0))
             tracks.append(getattr(self, f"track{track_idx}_fc")(track_x))
         
         out = torch.stack(tracks, dim=-1)
