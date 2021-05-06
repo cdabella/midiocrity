@@ -82,7 +82,8 @@ class Encoder(nn.Module):
         track_z_logvars = []
         track_outputs = []
         for track_idx in range(self.n_tracks):
-            track_input = torch.squeeze(input[:, :, :, track_idx])
+            # track_input = torch.squeeze(input[:, :, :, track_idx])
+            track_input = input[:, :, :, track_idx]
             track_input = track_input.float()
             track_output, _ = getattr(self, f"track{track_idx}_lstm")(track_input)
             track_outputs.append(track_output)
