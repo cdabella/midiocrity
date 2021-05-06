@@ -269,13 +269,17 @@ def main():
                 )
 
                 valid_epoch_losses *= 0
-                torch.save(
-                    mvae.state_dict(), (
-                        f"{config['output_params']['save_dir']}"
-                        f"{config['output_params']['name']}"
-                        f".epoch-{epoch}.pt"
+                if (
+                        config['output_params']['save_epoch'] and
+                        epoch % config['output_params']['save_epoch'] == 0
+                ):
+                    torch.save(
+                        mvae.state_dict(), (
+                            f"{config['output_params']['save_dir']}"
+                            f"{config['output_params']['name']}"
+                            f".epoch-{epoch}.pt"
+                        )
                     )
-                )
 
                 progress.advance(task)
 
