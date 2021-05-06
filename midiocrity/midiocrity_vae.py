@@ -110,6 +110,14 @@ class MidiocrityVAE(nn.Module):
             # kl_loss = 0
             return kl_loss, reconstruction_loss, reconstruction_loss
 
+    @staticmethod
+    def accuracy(X, recon):
+        return torch.sum(
+            torch.all(
+                torch.argmax(X, dim=2) == torch.argmax(F.softmax(recon, dim=2), dim=2),
+                 dim=2)
+        ) / (X.shape[0] * X.shape[1])
+
     def sample(self, num_samples):
         z = torch.randn((num_samples, self.z_dim), device=self.device)
         out = self.decode(z)
