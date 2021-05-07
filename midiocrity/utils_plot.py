@@ -9,6 +9,9 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt; plt.rcParams['figure.dpi'] = 100
 import pretty_midi
+from scipy.io.wavfile import write
+from pydub import AudioSegment
+
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 with open('../config/midiocrity_vae.yaml', 'r') as file:
@@ -185,3 +188,9 @@ def plot_latent(autoencoder, data, num_batches=100):
         if i > num_batches:
             plt.colorbar()
             break
+
+def audioGenerator(pm, fname, fs=44100):
+    raw = np.float32(pm.fluidsynth(fs))
+    write(f'../audio/{fname}.wav', fs, raw)
+    AudioSegment.from_wav(f'../audio/{fname}.wav').export(f'../audio/{fname}.mp3')
+    return AudioSegment.from_mp3(f'../audio/{fname}.mp3')

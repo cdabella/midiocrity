@@ -35,5 +35,5 @@ def slerp(input, end, weight):
 
     theta = torch.acos((input_norm*end_norm).sum(1))
     so = torch.sin(theta)
-    res = input * (torch.sin((1.0-weight)*theta)/so).unsqueeze(1) + end * (torch.sin(weight*omega)/so).unsqueeze(1)
+    res = input * (torch.sin((1.0-weight)*theta)/so).unsqueeze(1) + end * (torch.sin(weight*theta)/so).unsqueeze(1)
     return res

@@ -128,7 +128,7 @@ class MidiocrityVAE(nn.Module):
         if method == 'lerp':
             interpolator = torch.lerp
         elif method == 'slerp':
-            zi = slerp
+            interpolator = slerp
 
         # Encode enpoints
         print('encoding ...')
@@ -143,7 +143,7 @@ class MidiocrityVAE(nn.Module):
         # Interpolation by length L
         print('generating interpolation ...')
         z = []
-        for i in range(length):
+        for i in range(length + 1):
             weight = i / length
             zi = interpolator(z_s, z_t, weight)
             z.append(zi)
@@ -163,4 +163,4 @@ class MidiocrityVAE(nn.Module):
         print(time.time() - start)
         
         # d = [D(z0),...,D(zL)]
-        return d
+        return z, d
