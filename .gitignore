@@ -141,6 +141,6 @@ dmypy.json
 /data/pianorolls/
 /data/batches/
 /data/metadata/
-
+/data/metadata.json
 # Outputs
 out/
