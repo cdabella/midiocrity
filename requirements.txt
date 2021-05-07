@@ -1,0 +1,8 @@
+pyyaml
+torch
+pretty_midi
+rich
+sklearn
+matplotlib
+pypianoroll
+jupyter
