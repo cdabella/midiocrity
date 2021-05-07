@@ -1,6 +1,6 @@
 import config.config_preprocessing as config
 import matplotlib.pyplot as plt
-from musae.dataset import MidiDataset
+from midiocrity.dataset import MidiDataset
 import os
 import numpy as np
 import pretty_midi as pm
