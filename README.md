@@ -9,17 +9,20 @@ cd data
 ```
 
 ## Environment Setup
-To add the environment with conda, use the environment.yml file:
+To add the environment with conda, use the following commands:
 ```
-conda env create -f environment.yml
+conda create -n midiocrity python=3.9
+conda activate midiocrity
+pip install -r requirements.txt
 ```
 
-To update your environment, add dependencies to the environment.yml file adn then run:
+## Training the model
+To train the model, navigate to the midiocrity folder, and run:
 ```
-conda env update -f environment.yml
+python train.py
 ```
 
 ## Architecture
-We are using the architecture referenced in the [Off the Beaten Track](https://arxiv.org/pdf/1804.09808.pdf) paper.
+We are using a modified version of the architecture referenced in the [Off the Beaten Track](https://arxiv.org/pdf/1804.09808.pdf) paper.
 
 ![alt text](architecture.png "VAE interpolation Architecture")
