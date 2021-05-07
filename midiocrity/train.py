@@ -116,9 +116,6 @@ def main():
         gamma=config['train_params']['scheduler_gamma']
     )
 
-    param_norm = lambda m: math.sqrt(sum([p.norm().item() ** 2 for p in m.parameters()]))
-    grad_norm = lambda m: math.sqrt(sum([p.grad.norm().item() ** 2 for p in m.parameters() if p.grad is not None]))
-
     beta = config['train_params']['beta_init']
 
     loader = MidiDataloader(
