@@ -6,5 +6,5 @@ pypianoroll==0.5.0
 gpustat==0.5.0
 pydot==1.2.4
 graphviz==0.9
-tensorflow-gpu==1.12.3
+tensorflow-gpu==2.5.0
 jupyter==1.0.0
